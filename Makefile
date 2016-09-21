@@ -2,6 +2,7 @@
 PICTURES = \
 	common/logo-penguins.pdf \
 	common/logo-square.pdf \
+	pairing-scheme.pdf \
 	slc-mlc-cell.pdf
 
 all: $(PICTURES)

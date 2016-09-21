@@ -52,7 +52,7 @@
   \item Paired pages: why the hell did they decide to assign the same
 	cell to different NAND pages?
   \item Unstable bits: you'd better make sure your board has enough
-	power to finish the current erase of program operation, and
+	power to finish the current erase or program operation, and
 	prevent future operations from happening when you are about to
 	experience a power-cut.
   \end{itemize}
@@ -60,7 +60,7 @@
 
 \begin{frame}{MLC NAND constraints: Reduced lifetime}
   \begin{itemize}
-  \item Not a big problem: we just need to make sure that we correctly
+  \item Not a big problem: we just need to make sure we correctly
 	distribute the wear over the NAND device.
   \item UBI is already taking care of that.
   \item May require some tweaking at the UBI level: the default values
@@ -142,9 +142,9 @@
 \end{frame}
 
 \begin{frame}{MLC NAND constraints: Paired pages}
-  \begin{itemize}
-  \item TODO: add image describing a page pairing scheme
-  \end{itemize}
+  \begin{center}
+    \includegraphics[scale=0.5]{pairing-scheme.pdf}
+  \end{center}
 \end{frame}
 
 \begin{frame}{MLC NAND constraints: What we discovered (bad news)}
