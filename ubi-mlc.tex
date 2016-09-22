@@ -122,23 +122,23 @@
   \end{itemize}
 \end{frame}
 
+\begin{frame}{MLC NAND constraints: MLC cells}
+  \begin{center}
+    \includegraphics[scale=0.2]{slc-mlc-cell.pdf}
+  \end{center}
+\end{frame}
+
 \begin{frame}{MLC NAND constraints: Paired pages}
   \begin{itemize}
   \item This is one of the biggest problem we have with MLC NANDs.
-  \item MLC cells expose four states, or two bits.
-  \item Each bit is assigned to a different page. Pages sharing the
-	same cells are called "Paired pages".
+  \item MLC cells expose two bits.
+  \item Each bit is assigned to a different page.
+  \item Pages sharing the same cells are called "Paired pages".
   \item Paired pages are usually not contiguous.
   \item Pages have to be programmed in order.
   \item When programming the second page of a pair, you may corrupt
 	the first page of the pair if the operation is interrupted.
   \end{itemize}
-\end{frame}
-
-\begin{frame}{MLC NAND constraints: Paired pages}
-  \begin{center}
-    \includegraphics[scale=0.2]{slc-mlc-cell.pdf}
-  \end{center}
 \end{frame}
 
 \begin{frame}{MLC NAND constraints: Paired pages}
