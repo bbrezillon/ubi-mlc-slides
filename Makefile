@@ -3,7 +3,8 @@ PICTURES = \
 	common/logo-penguins.pdf \
 	common/logo-square.pdf \
 	pairing-scheme.pdf \
-	slc-mlc-cell.pdf
+	slc-mlc-cell.pdf \
+        ubi-peb-consolidation-workflow.pdf
 
 all: $(PICTURES)
 	$(PDFLATEX_ENV) pdflatex -shell-escape ubi-mlc.tex
@@ -18,4 +19,4 @@ all: $(PICTURES)
 	dia -e $@ -t eps $^
 
 clean:
-	$(RM) -r common/*.pdf *.pdf *.pyg *.snm *.toc *.vrb *.aux *.nav *.out *.dia~ *.log _minted*
+	$(RM) -r *.pyg *.snm *.toc *.vrb *.aux *.nav *.out *.dia~ *.log _minted*
