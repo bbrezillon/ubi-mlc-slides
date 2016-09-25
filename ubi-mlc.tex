@@ -17,9 +17,9 @@
 
 \title{Running UBI/UBIFS on MLC NAND}
 \conference{Embedded Linux Conference 2016}
-\authors{Boris Brezillon}
-\email{boris@free-electrons.com}
-\institute{Free Electrons}
+\authors{Boris Brezillon, Richard Weinberger}
+\email{boris@free-electrons.com, richard@sigma-star.at}
+\institute{Free Electrons, sigma star gmbh}
 \slidesurl{http://free-electrons.com/pub/conferences/2016/elc/brezillon-nand-framework}
 
 \begin{document}
@@ -30,16 +30,18 @@
 
 \subsection{MLC NANDs constraints: where the nightmare begins}
 
-\begin{frame}{SLC NANDs: Finger in the nose}
-  \begin{itemize}
-  \item TODO: add an image (search on a tumblr?)
-  \end{itemize}
+\begin{frame}{SLC NANDs: Boring, our happy place}
+  \begin{figure}
+  \includegraphics[scale=0.05]{Macaca_fuscata_juvenile_yawning.jpg}
+   \end{figure}
+% or maybe this one? https://en.wikipedia.org/wiki/Wikipedia:Featured_picture_candidates/Japanese_macaque_juvenile_yawning
 \end{frame}
 
-\begin{frame}{MLC NANDs: Ouch!}
-  \begin{itemize}
-  \item TODO: add an image (search on a tumblr)
-  \end{itemize}
+\begin{frame}{MLC NANDs: A nightmare}
+  \begin{figure}
+  \includegraphics[scale=0.1]{hand-984170_1920.jpg}
+   \end{figure}
+% https://pixabay.com/de/hand-silhouette-form-horror-984170/
 \end{frame}
 
 \begin{frame}{MLC NAND constraints: What we knew}
@@ -178,16 +180,218 @@
   \end{itemize}
 \end{frame}
 
+\subsection{Addressing the constraints}
+
+\begin{frame}{Exposing te pairing scheme to MTD (and its upper layers)}
+  \begin{itemize}
+  \item Every MLC NAND has a slightly different pairing scheme.
+  \item In most datasheets the scheme is described using a table which covers all pages.
+  \item NAND vendors expect users to copy this table into device tree.
+  \item All schemes we saw so far follow a pattern and allow an algorithmic description.
+  \item We teach MTD these patterns and give them names such as 'dist3' or 'dist6'.
+  \item MTD offers an interface to figure which pages are paired.
+  \item Works also for NAND with more than 2 pages in each pair (i.e. TLC NAND).
+  \item More details from NAND vendors would be great.
+  \item Yes, I'm looking at you, Hynix, Toshiba, Micron, \ldots
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Our first approach (on UBIFS level)}
+  \begin{itemize}
+  \item Write filesystem critical data in 'SLC mode' and everything else in 'MLC mode'.
+  \item Filesystem critical data would be the UBIFS journal head, LEB property tree, etc.
+  \item This means that within the same block some high pages are skipped and some not.
+  \item While testing this approach it turned out that some MLC NANDs are smart and
+        precalculate the effects of write disturb of writing to the high page for all
+        pages as soon you write one high page in a block.
+  \item As consequence of this, low pages show much more bitflips than usual.
+  \item We dropped this approach.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Our second approach (on UBIFS level)}
+  \begin{itemize}
+  \item Similar to the first approach but don't mix 'SLC mode' and 'MLC mode' within the same
+        block.
+  \item MLC blocks can have sizes of multiple megabytes, having some of them in 'SLC mode' would
+        waste a lot of storage. UBIFS garbage collection has to compact 'SLC mode' blocks to 'MLC mode'
+        blocks.
+  \item Bonus question: Why is this kind of garbage collection safe?
+  \item Doing this all on UBIFS level turned out to be the wrong layer.
+  \item After touching almost every IO related function in UBIFS, we dropped this approach too.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{First some basics: UBI nomenclature}
+\begin{itemize}
+\item[PEB] Physical erase block.
+\item[LEB] Logical erase block.
+\item[SLC LEB] A LEB where data sits only on low pages.
+\item[Full LEB] A SLC LEB where the last page has been written.
+\item[CLEB] A consolidated LEB hosted on a PEB where low and high pages are used.
+\item[Image] UBI on your MTD partition.
+\item[Device] Runtime representation of your UBI image (i.e. \textbf{/dev/ubi0}).
+\item[Volume] A volume within the UBI image (i.e. \textbf{/dev/ubi0\_0}).
+\item[Attach] Process of loading an UBI image (i.e. attach mtd0).
+\end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{UBI example}
+\begin{figure}
+\includegraphics[scale=0.33]{ubi-nonfastmap.pdf}
+\end{figure}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{UBI PEB on SLC NAND}
+   \begin{columns}
+   \column{0.5\textwidth}
+     \begin{figure}
+     \includegraphics[scale=0.40]{ubi_slc.pdf}
+     \end{figure}
+   \column{0.5\textwidth}
+    \begin{itemize}
+    \item Erase count and volume ID header are located on the first page.
+    \item Of subpages are not supported, volume ID header will be placed on the second page.
+    \item Other pages are used for payload.
+    \end{itemize}
+   \end{columns}
+\end{frame}
+
+\begin{frame}{Our third approach on (UBI level)}
+  \begin{itemize}
+  \item By default every LEB is written in 'SLC mode'.
+  \item Obviously we'd waste halve of the available storage capacity.
+  \item As soon we run out of available free space, UBI will consolidate two fully written SLC LEBs
+        into one MLC PEB and we gain one more LEB which can be written again in 'SLC mode'.
+  \item That way we can utilize all pages.
+  \item Sounds pretty easy, isn't it?
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{LEB consolidation}
+  \begin{itemize}
+  \item As soon as all low pages of a PEB are written the corresponding LEB is considered as full
+        and becomes a candidate for consolidation.
+  \item Bonus question: Why has it to be full?
+  \item To produce one free PEB, UBI selects two PEBs that host full LEBs, copies their data
+        into a new PEB in 'MLC mode' and erases both source PEBs.
+        That means that on the target PEB both low and high pages
+        are used.
+  \item This operation is more or less an atomic LEB change operation. So, we can resuse a lot of
+        UBI's inftrastructure.
+  \item A PEB in 'MLC mode' hosts always two LEBs, therefore right after the EC header it has
+        two VID headers. One for each LEB. So, we have to introduce a new UBI on-flash format.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{UBI PEB in SLC mode on MLC NAND}
+   \begin{columns}
+   \column{0.5\textwidth}
+     \begin{figure}
+     \includegraphics[scale=0.33]{ubi_mlc_slcmode.pdf}
+     \end{figure}
+   \column{0.5\textwidth}
+    \begin{itemize}
+    \item MLC does not support subpages.
+    \item Only low pages are used, such that no write to a high page can damage data.
+    \item Page 0 hosts erase count header.
+    \item The next page, page 1 in this example, the volume ID header.
+    \item All remaining pages are used for payload.
+    \end{itemize}
+   \end{columns}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{UBI PEB in MLC mode on MLC NAND}
+   \begin{columns}
+   \column{0.5\textwidth}
+     \begin{figure}
+     \includegraphics[scale=0.33]{ubi_mlc_conso.pdf}
+     \end{figure}
+   \column{0.5\textwidth}
+    \begin{itemize}
+    \item Second page hosts two volume ID headers, one for each LEB payload.
+    \item Both low and high pages are used.
+    \item Stored data is immutable.
+    \end{itemize}
+   \end{columns}
+\end{frame}
+
+\begin{frame}{Time for some hard-hitting details}
+  \begin{itemize}
+  \item On SLC NAND UBI maps exactly one LEB to one PEB, a classic 1:1 mapping.
+  \item On MLC NAND we expose two times as many LEBs as PEBs. Many call sites within UBI,
+        both kernel and userspace, use LEB counters but mean PEBs. For SLC it was the same,
+        not on MLC.
+  \item Currently UBI has a very simple free space accounting model, basically when UBI runs out of
+        free PEBs it waits for erase worker to produce a free PEB. PEB erasure is asynchronous in UBI.
+  \item While LEB consolidation produces one free PEB it also requires a free PEB. With the current free space
+        model we can deadlock since the 'get me a free PEB' code path can trigger LEB consolidation which
+        requests again a free PEB. We solved that by reserving more PEBs for LEB consolidation. 
+  \item TODO, more details here?
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Fancy new corner cases}
+  \begin{itemize}
+  \item Consolidated LEB are immutable.
+  \item Consider PEB $x$ in 'SLC mode', it hosts LEB $a$ and UBIFS unmaps LEB $a$.
+  \item Since PEB erasure is asynchronous it may take some time until PEB $x$ is erased.
+  \item If a power-cut happens we might boot again with LEB $a$ present or not.
+  \item UBIFS can deal with that because it keeps track of the usage of all LEBs.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Fancy new corner cases (cont'd)}
+  \begin{itemize}
+  \item With immutable LEBs a new corner case emerged.
+  \item Consider PEB $x$ in 'MLC mode', it hosts LEB $a$ and LEB $b$ and unmaps LEB $a$.
+  \item UBI is now not allowed to erase PEB $x$ since LEB $b$ might be still in use, therfore LEB $a$ is marked
+        as invalid, in memory.
+  \item Now UBIFS allocates LEB $a$ again and writes data to it. After some time it unmaps LEB $a$ again and
+        a power-cut happens.
+  \item If we are unlucky, PEB $x$ is still present and UBIFS will see the outdated version of LEB $a$ as the most current one.
+  \item The solution is that UBIFS most not unmap LEBs which it will allocate later again.
+  \item So, we had to render some unmap operations to atomic LEB change operations.
+  \item TODO: this example is very complicated and long :-(
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Finally, how to use UBI (and UBIFS) on MLC NAND?}
+  \begin{itemize}
+  \item Teach MTD to know your NAND, especially the pairing.
+  \item Also make sure you have strong ECC.
+  \item When using ubinize, pass the type of the pairing scheme to it.
+  \item Run ubihealthd.
+  \item TODO: more details? Maybe from CHIP?
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Open issues}
+  \begin{itemize}
+  \item LEB consolidation is slow because multiple megabytes have to be transfered.
+  \item A possible optimization is splitting a PEB into more than two LEBs.
+  \item Implement an breakup function such that consolidated LEBs can be written and
+        we are allowed to consolidate LEBs which are not full.
+  \item Currently LEB consolidation covers the whole UBI instance, like wear leveling.
+        We'd like to limit it to volume scope such that free space accounting will be easier.
+  \end{itemize}
+\end{frame}
+
 \begin{frame}
   \begin{center}
   \Huge
   Questions? Suggestions? Comments?\\
   \vspace{1.5cm}
   \huge
-  Boris Brezillon\\
+  Boris Brezillon, Richard Weinberger\\
   \large
   \vspace{0.5cm}
-  \code{boris.brezillon@free-electrons.com}
+  \code{boris.brezillon@free-electrons.com, richard@sigma-star.at}
   \vspace{0.5cm}
   \newline Slides under CC-BY-SA 3.0\\
   \scriptsize

@@ -18,4 +18,4 @@ all: $(PICTURES)
 	dia -e $@ -t eps $^
 
 clean:
-	$(RM) -r common/*.pdf *.pdf *.pyg *.snm *.toc *.vrb *.aux *.nav *.out *.dia~ *.log _minted*
+	$(RM) -r *.pyg *.snm *.toc *.vrb *.aux *.nav *.out *.dia~ *.log _minted*
