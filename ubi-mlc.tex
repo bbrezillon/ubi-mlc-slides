@@ -98,7 +98,7 @@
   \begin{itemize}
   \item MLC cells expose 4 different states instead of 2 states for
 	SLC cells.
-  \item In MLC cells, distance between states are smaller: data
+  \item In MLC cells, distances between states are smaller: data
 	retention issues are emphasized.
   \item The smaller the process the closer the cells are, which makes
 	read/write disturbance worse.
@@ -257,7 +257,7 @@
    \column{0.5\textwidth}
     \begin{itemize}
     \item Erase count and volume ID header are located on the first page.
-    \item Of subpages are not supported, volume ID header will be placed on the second page.
+    \item If subpages are not supported, volume ID header will be placed on the second page.
     \item Other pages are used for payload.
     \end{itemize}
    \end{columns}
@@ -270,22 +270,22 @@
   \item As soon we run out of available free space, UBI will consolidate two fully written SLC LEBs
         into one MLC PEB and we gain one more LEB which can be written again in 'SLC mode'.
   \item That way we can utilize all pages.
-  \item Sounds pretty easy, isn't it?
+  \item Sounds pretty easy, right?
   \end{itemize}
 \end{frame}
 
 \begin{frame}{LEB consolidation}
   \begin{itemize}
-  \item As soon as all low pages of a PEB are written the corresponding LEB is considered as full
+  \item As soon as all low pages of a PEB are written the corresponding LEB is considered full
         and becomes a candidate for consolidation.
   \item Bonus question: Why has it to be full?
   \item To produce one free PEB, UBI selects two PEBs that host full LEBs, copies their data
         into a new PEB in 'MLC mode' and erases both source PEBs.
         That means that on the target PEB both low and high pages
         are used.
-  \item This operation is more or less an atomic LEB change operation. So, we can resuse a lot of
+  \item This operation is more or less an atomic LEB change operation. So we can resuse a lot of
         UBI's inftrastructure.
-  \item A PEB in 'MLC mode' hosts always two LEBs, therefore right after the EC header it has
+  \item A PEB in 'MLC mode' always hosts two LEBs, therefore right after the EC header it has
         two VID headers. One for each LEB. So, we have to introduce a new UBI on-flash format.
   \end{itemize}
 \end{frame}
@@ -307,7 +307,7 @@
    \column{0.5\textwidth}
     \begin{itemize}
     \item MLC does not support subpages.
-    \item Only low pages are used, such that no write to a high page can damage data.
+    \item Only low pages are used, because writes to high pages are more likely to damage data.
     \item Page 0 hosts erase count header.
     \item The next page, page 1 in this example, the volume ID header.
     \item All remaining pages are used for payload.
@@ -335,8 +335,7 @@
   \begin{itemize}
   \item On SLC NAND UBI maps exactly one LEB to one PEB, a classic 1:1 mapping.
   \item On MLC NAND we expose two times as many LEBs as PEBs. Many call sites within UBI,
-        both kernel and userspace, use LEB counters but mean PEBs. For SLC it was the same,
-        not on MLC.
+        both kernel and userspace, use LEB counters but mean PEBs. For SLC it does not matter, for MLC it does!
   \item Currently UBI has a very simple free space accounting model, basically when UBI runs out of
         free PEBs it waits for erase worker to produce a free PEB. PEB erasure is asynchronous in UBI.
   \item While LEB consolidation produces one free PEB it also requires a free PEB. With the current free space
@@ -364,15 +363,15 @@
   \item Now UBIFS allocates LEB $a$ again and writes data to it. After some time it unmaps LEB $a$ again and
         a power-cut happens.
   \item If we are unlucky, PEB $x$ is still present and UBIFS will see the outdated version of LEB $a$ as the most current one.
-  \item The solution is that UBIFS most not unmap LEBs which it will allocate later again.
-  \item So, we had to render some unmap operations to atomic LEB change operations.
+  \item The solution is that UBIFS must not unmap LEBs which it will allocate later again.
+  \item So, we had to change some unmap operations to atomic LEB change operations.
   \end{itemize}
 \end{frame}
 
 \begin{frame}{Dealing with read disturb}
   \begin{itemize}
   \item On MLC read disturb is a serious problem.
-  \item Reading back all data from time to time of needed to detect bitflips.
+  \item Reading back all data from time to time is needed to detect bitflips.
   \item ubihealthd queries read counters from userspace and trigger reads.
   \item It does not trigger bulk reads such that other applications are not influenced.
   \end{itemize}
