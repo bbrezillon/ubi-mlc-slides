@@ -4,10 +4,7 @@ PICTURES = \
 	common/logo-square.pdf \
 	pairing-scheme.pdf \
 	slc-mlc-cell.pdf \
-	ubi-peb-consolidation-workflow.pdf \
-	ubi_mlc_conso.pdf \
-	ubi_mlc_slcmode.pdf \
-	ubi_slc.pdf
+	ubi-peb-consolidation-workflow.pdf
 
 all: $(PICTURES)
 	$(PDFLATEX_ENV) pdflatex -shell-escape ubi-mlc.tex
@@ -25,6 +22,4 @@ all: $(PICTURES)
 	dia -e $@ -t eps $^
 
 clean:
-	mv ubi-nonfastmap.pdf ubi-nonfastmap.pdf.keep
-	$(RM) -r common/*.pdf *.pdf *.pyg *.snm *.toc *.vrb *.aux *.nav *.out *.dia~ *.log _minted*
-	mv ubi-nonfastmap.pdf.keep ubi-nonfastmap.pdf
+	$(RM) -r $(PICTURES) *.pyg *.snm *.toc *.vrb *.aux *.nav *.out *.dia~ *.log _minted*
