@@ -6,7 +6,8 @@ PICTURES = \
 	slc-mlc-cell.pdf \
 	ubi-peb-consolidation-workflow.pdf \
 	ubi-mlc-leb-state.pdf \
-	ubi-mlc-leb-state-v2.pdf
+	ubi-mlc-leb-state-v2.pdf \
+	zombie-leb.pdf
 
 all: $(PICTURES)
 	$(PDFLATEX_ENV) pdflatex -shell-escape ubi-mlc.tex

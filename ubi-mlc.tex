@@ -257,12 +257,12 @@
 \begin{frame}{Handle the problem in UBIFS (our first attempts)}
   \begin{itemize}
   \item Proposals:
-    \begin{itemize}
-    \item 1) Write everything in 'SLC mode' and consolidate UBIFS nodes in MLC
+    \begin{enumerate}
+    \item Write everything in 'SLC mode' and consolidate UBIFS nodes in MLC
 	  mode when we are running out of space.
-    \item 2) Write everything in 'MLC mode' (except critical data) and skip
+    \item Write everything in 'MLC mode' (except critical data) and skip
 	  pages when we need to secure data (at sync/commit time).
-    \end{itemize}
+    \end{enumerate}
   \item Pros:
     \begin{itemize}
     \item UBIFS knows exactly which data are valid and dirty.
@@ -291,6 +291,12 @@
   \end{itemize}
 \end{frame}
 
+\begin{frame}{LEB consolidation: LEB states}
+  \begin{center}
+    \includegraphics[scale=0.3]{ubi-mlc-leb-state.pdf}
+  \end{center}
+\end{frame}
+
 \begin{frame}{LEB consolidation: when does it take place?}
   \begin{itemize}
   \item As soon as all low pages of a PEB are written the corresponding LEB is
@@ -308,19 +314,6 @@
   \end{itemize}
 \end{frame}
 
-\begin{frame}{LEB consolidation: LEB states}
-  \begin{center}
-    \includegraphics[scale=0.3]{ubi-mlc-leb-state.pdf}
-  \end{center}
-\end{frame}
-
-\begin{frame}[fragile]
-\frametitle{LEB consolidation overview}
-     \begin{figure}
-     \includegraphics[scale=0.25]{ubi-peb-consolidation-workflow.pdf}
-     \end{figure}
-\end{frame}
-
 \begin{frame}[fragile]
 \frametitle{UBI extended nomenclature}
   \begin{itemize}
@@ -334,6 +327,13 @@
   \item[Volume] A volume within the UBI image (i.e. \textbf{/dev/ubi0\_0}).
   \item[Attach] Process of loading an UBI image (i.e. attach mtd0).
   \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{LEB consolidation: trigger}
+     \begin{figure}
+     \includegraphics[scale=0.25]{ubi-peb-consolidation-workflow.pdf}
+     \end{figure}
 \end{frame}
 
 \begin{frame}[fragile]
@@ -379,31 +379,37 @@
 	to confusion with the 1:2 mapping.
   \item Space reservation logic is acting at the PEB level.
   \item Leads to \code{-ENOSPC} if we consider \code{nLEBS = nPEBS x 2}
+  \item Require some guarantees from the UBI user:
+    \begin{itemize}
+    \item Must fill LEBs entirely.
+    \item Must limit the number of LEBs opened simultaneously.
+    \item Must inform UBI about this number.
+    \end{itemize}
   \end{itemize}
 \end{frame}
 
-\begin{frame}{Fancy new corner cases}
-  \begin{itemize}
-  \item Consolidated LEBs are immutable.
-  \item Consider PEB $x$ in 'SLC mode', it hosts LEB $a$ and UBIFS unmaps LEB $a$.
-  \item Since PEB erasure is asynchronous it may take some time until PEB $x$ is erased.
-  \item If a power-cut happens we might boot again with LEB $a$ present or not.
-  \item UBIFS can deal with that because it keeps track of the usage of all LEBs.
-  \end{itemize}
+\begin{frame}{Fancy new corner case: zombie LEB}
+  \begin{figure}
+  \includegraphics[scale=0.5]{zombie-leb.pdf}
+  \end{figure}
 \end{frame}
 
-\begin{frame}{Fancy new corner cases (cont'd)}
+\begin{frame}{Fancy new corner case: zombie LEB}
   \begin{itemize}
-  \item With immutable LEBs a new corner case emerged.
-  \item Consider PEB $x$ in 'MLC mode', it hosts LEB $a$ and LEB $b$ and unmaps LEB $a$.
-  \item UBI is now not allowed to erase PEB $x$ since LEB $b$ might be still in use, therfore LEB $a$ is marked
-        as invalid, in memory.
-  \item Now UBIFS allocates LEB $a$ again and writes data to it. After some time it unmaps LEB $a$ again and
-        a power-cut happens.
-  \item If we are unlucky, PEB $x$ is still present and UBIFS will see the outdated version of LEB $a$ as the most current one.
-  \item The solution is that UBIFS must not unmap LEBs which it will allocate later again.
-  \item So, we had to change some unmap operations to atomic LEB change operations.
-  \item TODO: Last 2 slides would be clearer with a figure!!
+  \item Solutions:
+    \begin{enumerate}
+    \item Keep track of invalidated LEBs in UBI (using a log?).
+    \item Force UBI users to atomic updates when necessary.
+    \end{enumerate}
+  \item We chose solution 2:
+    \begin{itemize}
+    \item Patch UBIFS to use atomic update instead of unmap
+	  when the LEB is still referenced.
+    \item Continue to use unmap when the LEB is not referenced.
+    \item Unmap all unreferenced LEBs at each boot to update
+	  UBI's invalidated LEB database.
+    \end{itemize}
+  \item We might decide to switch to solution 1 at some point.
   \end{itemize}
 \end{frame}
 
@@ -434,6 +440,25 @@
     \end{itemize}
   \end{itemize}
 \end{frame}
+
+\begin{frame}
+  \begin{center}
+  \Huge
+  Questions? Suggestions? Comments?\\
+  \vspace{1.5cm}
+  \huge
+  Boris Brezillon, Richard Weinberger\\
+  \large
+  \vspace{0.5cm}
+  \code{boris.brezillon@free-electrons.com, richard@sigma-star.at}
+  \vspace{0.5cm}
+  \newline Slides under CC-BY-SA 3.0\\
+  \scriptsize
+  \url{http://free-electrons.com/pub/conferences/2016/elce/brezillon-ubi-mlc/}
+  \end{center}
+\end{frame}
+
+\subsection{Backup slides}
 
 \begin{frame}[fragile]
 \frametitle{V2 plans: How to make consolidation less invasive}
@@ -470,25 +495,6 @@
     \end{itemize}
    \end{columns}
 \end{frame}
-
-\begin{frame}
-  \begin{center}
-  \Huge
-  Questions? Suggestions? Comments?\\
-  \vspace{1.5cm}
-  \huge
-  Boris Brezillon, Richard Weinberger\\
-  \large
-  \vspace{0.5cm}
-  \code{boris.brezillon@free-electrons.com, richard@sigma-star.at}
-  \vspace{0.5cm}
-  \newline Slides under CC-BY-SA 3.0\\
-  \scriptsize
-  \url{http://free-electrons.com/pub/conferences/2016/elce/brezillon-ubi-mlc/}
-  \end{center}
-\end{frame}
-
-\subsection{Backup slides}
 
 \begin{frame}{LEB consolidation v2 : LEB states}
   \begin{center}
