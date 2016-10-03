@@ -11,6 +11,7 @@ PICTURES = \
 
 all: $(PICTURES)
 	$(PDFLATEX_ENV) pdflatex -shell-escape ubi-mlc.tex
+	$(PDFLATEX_ENV) pdflatex -shell-escape ubi-mlc.tex
 
 %.pdf: %.odg
 	libreoffice --headless --convert-to pdf $^
