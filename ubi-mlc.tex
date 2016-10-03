@@ -310,7 +310,7 @@
 
 \begin{frame}{LEB consolidation: LEB states}
   \begin{center}
-    \includegraphics[scale=0.5]{ubi-mlc-leb-state.pdf}
+    \includegraphics[scale=0.3]{ubi-mlc-leb-state.pdf}
   \end{center}
 \end{frame}
 
@@ -423,11 +423,14 @@
   \item LEB consolidation is slow and source of contentions.
   \item Space reservation is not simple.
   \item LEB and PEB concepts have to be clarified/split.
+  \item Full LEBs are not necessarily the best candidates for
+	consolidation.
   \item Long story short, we have a working PoC but it still needs work.
   \item We are working on a second version addressing these aspects:
     \begin{itemize}
     \item Relax locking and work with page chunks when consolidating LEBs.
     \item Fix PEB reservation by moving consolidation at the volume level.
+    \item Rework selection of candidates for consolidation.
     \end{itemize}
   \end{itemize}
 \end{frame}
@@ -482,6 +485,14 @@
   \newline Slides under CC-BY-SA 3.0\\
   \scriptsize
   \url{http://free-electrons.com/pub/conferences/2016/elce/brezillon-ubi-mlc/}
+  \end{center}
+\end{frame}
+
+\subsection{Backup slides}
+
+\begin{frame}{LEB consolidation v2 : LEB states}
+  \begin{center}
+    \includegraphics[scale=0.3]{ubi-mlc-leb-state-v2.pdf}
   \end{center}
 \end{frame}
 
