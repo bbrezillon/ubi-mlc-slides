@@ -427,6 +427,12 @@
   \item Teach MTD to know your NAND, especially the pairing.
   \item Also make sure you have strong ECC.
   \item When using ubinize, pass the type of the pairing scheme to it.
+    \begin{itemize}
+        \item For SLC NAND, PEB and minimum input/output unit size are enough.
+        \item To produce MLC NAND images we had to teach ubinize about pairing schemes.
+        \item So far only two schemes are supported.
+        \item Schemes have to be kept in sync with the kernel. Better solution?
+    \end{itemize}
   \item Run ubihealthd.
   \end{itemize}
 \end{frame}
