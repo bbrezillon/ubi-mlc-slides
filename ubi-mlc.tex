@@ -187,7 +187,7 @@
   \item It's a shame we had discover those problems while developing the
 	solution.
   \item More details from NAND vendors would be great.
-  \item Yes, I'm looking at you, Hynix, Toshiba, Micron, \ldots
+  \item Yes, I'm looking at you, Samsung, Hynix, Toshiba, Micron, \ldots
   \end{itemize}
 \end{frame}
 
@@ -230,9 +230,9 @@
 
 \subsection{Addressing the data retention issue}
 
-\begin{frame}{Dealing with read disturb}
+\begin{frame}{Dealing with data retention issues}
   \begin{itemize}
-  \item On MLC, read disturb is a serious problem.
+  \item On MLC, read/write disturb is a serious problem.
   \item Reading back all data from time to time is needed to detect bitflips.
   \item ubihealthd queries read counters from userspace and trigger reads.
   \item It does not trigger bulk reads such that other applications are not
@@ -273,8 +273,8 @@
     \begin{itemize}
     \item Solution 2 is not possible because of the convoluted pairing schemes
 	  and the 'open block' issue.
-    \item Solution 1 is too invasive (requires exposing two modes with different
-	  LEB size).
+    \item Solution 1 is too invasive: requires exposing two modes with different
+	  LEB size.
     \end{itemize}
   \end{itemize}
 \end{frame}
@@ -306,6 +306,12 @@
 	EC header it has two VID headers. One for each LEB. So, we have to
 	introduce a new UBI on-flash format.
   \end{itemize}
+\end{frame}
+
+\begin{frame}{LEB consolidation: LEB states}
+  \begin{center}
+    \includegraphics[scale=0.5]{ubi-mlc-leb-state.pdf}
+  \end{center}
 \end{frame}
 
 \begin{frame}[fragile]

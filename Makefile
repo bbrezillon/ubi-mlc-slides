@@ -4,13 +4,14 @@ PICTURES = \
 	common/logo-square.pdf \
 	pairing-scheme.pdf \
 	slc-mlc-cell.pdf \
-	ubi-peb-consolidation-workflow.pdf
+	ubi-peb-consolidation-workflow.pdf \
+	ubi-mlc-leb-state.pdf
 
 all: $(PICTURES)
 	$(PDFLATEX_ENV) pdflatex -shell-escape ubi-mlc.tex
 
 %.pdf: %.odg
-	bash -c "soffice --headless --convert-to pdf $^"
+	libreoffice --headless --convert-to pdf $^
 
 %.pdf: %.svg
 	inkscape -D -A $@ $<
