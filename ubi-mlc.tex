@@ -478,25 +478,22 @@
 \end{frame}
 
 \begin{frame}[fragile]
-\frametitle{V2 plans: How to fix LEB/PEB reservation}
-   \begin{columns}
-   \column{0.3\textwidth}
-   \column{0.7\textwidth}
+\frametitle{V2 plans: Fix LEB/PEB reservation}
+  \begin{itemize}
+  \item Limit consolidation scope to volumes.
+  \item Reserve PEBs ahaead of time.
+  \item Keep a certain amount of PEBs in SLC mode (5\%).
+  \item Rework selection of candidates for consolidation: LRU (Least
+	Recently Updated)
     \begin{itemize}
-    \item TODO: add a figure and a description
-%  \item One optimization would be placing the VID header at the end of the PEB,
-%        that way interrupted writes can be detected by checking only the header and
-%        not the CRC of the whole LEB.
-%  \item With the current free space accounting model LEB consolidation can still run out of
-%        space. This needs fixing.
-%  \item Currently LEB consolidation covers the whole UBI instance, like wear leveling.
-%        We'd like to limit it to volume scope such that free space accounting will be easier
-%        to enforce.
+    \item Get rid of the 'max number of open LEBs' limitation.
+    \item Get rid of the 'enterily fill LEBs' limitation.
+    \item More efficient than the 'consolidate full LEBs' approach.
     \end{itemize}
-   \end{columns}
+  \end{itemize}
 \end{frame}
 
-\begin{frame}{LEB consolidation v2 : LEB states}
+\begin{frame}{V2 plans: LEB states}
   \begin{center}
     \includegraphics[scale=0.3]{ubi-mlc-leb-state-v2.pdf}
   \end{center}
