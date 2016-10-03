@@ -70,6 +70,12 @@
   \end{itemize}
 \end{frame}
 
+\begin{frame}{MLC NAND constraints: MLC cells}
+  \begin{center}
+    \includegraphics[scale=0.2]{slc-mlc-cell.pdf}
+  \end{center}
+\end{frame}
+
 \begin{frame}{MLC NAND constraints: Data retention issues (1)}
   \begin{itemize}
   \item A NAND cell can see its state changed (charge loss or gain):
@@ -105,31 +111,6 @@
   \end{itemize}
 \end{frame}
 
-\begin{frame}{MLC NAND constraints: Unstable bits}
-  \begin{itemize}
-  \item Problem described here
-	\url{http://www.linux-mtd.infradead.org/doc/ubifs.html\#L_unstable_bits}
-  \item Reported by some people on the MTD mailing list
-  \item We did not see it during our experimentation
-  \item NAND vendors do not communicate on this problem and each
-	time we ask, they say they are not aware of this kind of
-	problems.
-  \item What is described as a black and white problem may actually
-	be more subtle: interrupting a program or erase operation
-	just before it finishes might leave the page/block in a 'valid'
-	state but with a lot of bitflips.
-  \item If this assumption turns out to be true, UBI should be able to
-	detect that the number of bitflips is high and decide to move
-	the data somewhere else or re-erase the block.
-  \end{itemize}
-\end{frame}
-
-\begin{frame}{MLC NAND constraints: MLC cells}
-  \begin{center}
-    \includegraphics[scale=0.2]{slc-mlc-cell.pdf}
-  \end{center}
-\end{frame}
-
 \begin{frame}{MLC NAND constraints: Paired pages}
   \begin{itemize}
   \item This is one of the biggest problem we have with MLC NANDs.
@@ -148,6 +129,26 @@
     \includegraphics[scale=0.5]{pairing-scheme.pdf}
   \end{center}
 \end{frame}
+
+\begin{frame}{MLC NAND constraints: Unstable bits}
+  \begin{itemize}
+  \item Problem described here:
+	\url{http://www.linux-mtd.infradead.org/doc/ubifs.html\#L_unstable_bits}
+  \item Reported by some people on the MTD mailing list/
+  \item We did not see it during our experimentation.
+  \item NAND vendors do not clearly communicate on this problem.
+  \item What is described as a black and white problem may actually
+	be more subtle:
+    \begin{itemize}
+    \item Interrupting a program or erase operation might leave the
+	  page/block in a 'valid' state but with a lot of bitflips.
+    \item UBI should be able to handle this case.
+    \end{itemize}
+  \item We need more information from vendors to predictably reproduce
+	the problem.
+  \end{itemize}
+\end{frame}
+
 
 \begin{frame}{MLC NAND constraints: What we discovered (bad news)}
   \begin{itemize}
@@ -231,7 +232,7 @@
 
 \begin{frame}{Dealing with read disturb}
   \begin{itemize}
-  \item On MLC read disturb is a serious problem.
+  \item On MLC, read disturb is a serious problem.
   \item Reading back all data from time to time is needed to detect bitflips.
   \item ubihealthd queries read counters from userspace and trigger reads.
   \item It does not trigger bulk reads such that other applications are not
@@ -241,7 +242,7 @@
 
 \subsection{Addressing the paired pages issue}
 
-\begin{frame}{Expose page pairing schemes}
+\begin{frame}{Expose page pairing schemes (the easy part)}
   \begin{itemize}
   \item Various page pairing scheme found in the wild.
   \item Most pairing schemes follow a predictable logic.
@@ -260,7 +261,7 @@
     \item 1) Write everything in 'SLC mode' and consolidate UBIFS nodes in MLC
 	  mode when we are running out of space.
     \item 2) Write everything in 'MLC mode' (except critical data) and skip
-	    pages when we need to secure data (at sync/commit time).
+	  pages when we need to secure data (at sync/commit time).
     \end{itemize}
   \item Pros:
     \begin{itemize}
@@ -282,9 +283,9 @@
   \begin{itemize}
   \item By default every LEB is written in 'SLC mode'.
   \item Obviously we'd waste half the storage capacity.
-  \item As soon we run out of available free space, UBI will consolidate
-	two fully written SLC LEBs into one MLC PEB and we gain one more LEB
-	which can be written again in 'SLC mode'.
+  \item As soon we run out of free erase block, UBI will consolidate
+	two fully written SLC LEBs into one MLC PEB and we gain one
+	more LEB which can be written again in 'SLC mode'.
   \item That way we can utilize all pages.
   \item Sounds pretty easy, right?
   \end{itemize}
