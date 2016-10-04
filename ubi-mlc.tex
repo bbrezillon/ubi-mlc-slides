@@ -134,7 +134,7 @@
   \begin{itemize}
   \item Problem described here:
 	\url{http://www.linux-mtd.infradead.org/doc/ubifs.html\#L_unstable_bits}
-  \item Reported by some people on the MTD mailing list/
+  \item Reported by some people on the MTD mailing list.
   \item We did not see it during our experimentation.
   \item NAND vendors do not clearly communicate on this problem.
   \item What is described as a black and white problem may actually
@@ -163,7 +163,7 @@
     \item These write-disturb prediction models are assuming random
 	  data, hence the need for data scrambling/randomization.
     \end{itemize}
-  \item Let's call this problem the 'Open block' issue.
+  \item Let's call this problem the 'open block' issue.
   \end{itemize}
 \end{frame}
 
@@ -222,7 +222,8 @@
    \column{0.5\textwidth}
     \begin{itemize}
     \item Erase count and volume ID header are located on the first page.
-    \item If subpages are not supported, volume ID header will be placed on the second page.
+    \item If subpages are not supported, volume ID header will be placed
+	  on the second page.
     \item Other pages are used for payload.
     \end{itemize}
    \end{columns}
@@ -233,8 +234,10 @@
 \begin{frame}{Dealing with data retention issues}
   \begin{itemize}
   \item On MLC, read/write disturb is a serious problem.
-  \item Reading back all data from time to time is needed to detect bitflips.
-  \item ubihealthd queries read counters from userspace and triggers reads.
+  \item Reading back all data from time to time is needed to detect
+	bitflips.
+  \item ubihealthd queries read counters from userspace and triggers
+	reads.
   \end{itemize}
 \end{frame}
 
@@ -242,8 +245,9 @@
   \begin{itemize}
   \item On SLC, and without Fastmap, a weekly \textbf{dd if=/dev/ubi0\_X of=/dev/null} was enough.
   \item On MLC read/write disturb happens sooner.
-  \item Instead of doing a bulk read from time to time, ubihealthd monitors read counters and triggers
-        a read of the whole PEB. If bitflips are detected UBI will scrub the PEB.
+  \item Instead of doing a bulk read from time to time, ubihealthd
+	monitors read counters and triggers a read of the whole PEB.
+	If bitflips are detected UBI will scrub the PEB.
   \end{itemize}
 \end{frame}
 
@@ -255,9 +259,11 @@
   \item Most pairing schemes follow a predictable logic.
   \item Can be described without a full association table.
   \item New interface to describe these pairing schemes.
-  \item The NAND framework will provide an implementation for each pairing scheme.
-  \item Pairing scheme selection should be based on NAND detection information.
-  \item MTD provides a API to let MTD users query pairing information.
+  \item The NAND framework will provide an implementation for each
+	pairing scheme.
+  \item Pairing scheme selection should be based on NAND detection
+	information.
+  \item MTD provides an API to let MTD users query pairing information.
   \end{itemize}
 \end{frame}
 
@@ -265,23 +271,23 @@
   \begin{itemize}
   \item Proposals:
     \begin{enumerate}
-    \item Write everything in 'SLC mode' and consolidate UBIFS nodes in MLC
-	  mode when we are running out of space.
+    \item Write everything in 'SLC mode' and consolidate UBIFS nodes in
+	  MLC mode when we are running out of space.
     \item Write everything in 'MLC mode' (except critical data) and skip
 	  pages when we need to secure data (at sync/commit time).
     \end{enumerate}
   \item Pros:
     \begin{itemize}
     \item UBIFS knows exactly which data are valid and dirty.
-    \item UBIFS knows when data protection is required (i.e. at sync and commit
-	  time).
+    \item UBIFS knows when data protection is required (i.e. at sync and
+	  commit time).
     \end{itemize}
   \item Cons:
     \begin{itemize}
-    \item Solution 2 is not possible because of the convoluted pairing schemes
-	  and the 'open block' issue.
-    \item Solution 1 is too invasive: requires exposing two modes with different
-	  LEB size.
+    \item Solution 2 is not possible because of the convoluted pairing
+	  schemes and the 'open block' issue.
+    \item Solution 1 is too invasive: requires exposing two modes with
+	  different LEB size.
     \end{itemize}
   \end{itemize}
 \end{frame}
@@ -306,18 +312,18 @@
 
 \begin{frame}{LEB consolidation: when does it take place?}
   \begin{itemize}
-  \item As soon as all low pages of a PEB are written the corresponding LEB is
-	considered full and becomes a candidate for consolidation.
+  \item As soon as all low pages of a PEB are written the corresponding
+	LEB is considered full and becomes a candidate for consolidation.
   \item Bonus question: Why has it to be full?
   \item To produce one free PEB, UBI selects two PEBs that host full LEBs,
-	copies their data into a new PEB in 'MLC mode' and erases both source
-	PEBs.
+	copies their data into a new PEB in 'MLC mode' and erases both
+	source PEBs.
   \item Means that on the target PEB both low and high pages are used.
-  \item This operation is more or less an atomic LEB change operation. So we
-	can reuse a lot of  UBI's infrastructure.
-  \item A PEB in 'MLC mode' always hosts two LEBs, therefore right after the
-	EC header it has two VID headers. One for each LEB. So, we have to
-	introduce a new UBI on-flash format.
+  \item This operation is more or less an atomic LEB change operation.
+	So we can reuse a lot of  UBI's infrastructure.
+  \item A PEB in 'MLC mode' always hosts two LEBs, therefore right after
+	the EC header it has two VID headers. One for each LEB. So, we
+	have to introduce a new UBI on-flash format.
   \end{itemize}
 \end{frame}
 
@@ -328,10 +334,13 @@
   \item[LEB] Logical erase block.
   \item[SLC LEB] A LEB where data sits only on low pages.
   \item[Full LEB] A SLC LEB where the last page has been written.
-  \item[CLEB] A consolidated LEB hosted on a PEB where low and high pages are used.
+  \item[CLEB] A consolidated LEB hosted on a PEB where low and high pages
+	      are used.
   \item[Image] UBI on your MTD partition.
-  \item[Device] Runtime representation of your UBI image (i.e. \textbf{/dev/ubi0}).
-  \item[Volume] A volume within the UBI image (i.e. \textbf{/dev/ubi0\_0}).
+  \item[Device] Runtime representation of your UBI image
+		(i.e. \textbf{/dev/ubi0}).
+  \item[Volume] A volume within the UBI image
+		(i.e. \textbf{/dev/ubi0\_0}).
   \item[Attach] Process of loading an UBI image (i.e. attach mtd0).
   \end{itemize}
 \end{frame}
@@ -354,7 +363,7 @@
     \begin{itemize}
     \item MLC does not support subpages.
     \item Only low pages are used, because writes to high pages are more
-	  likely to damage data.
+	  likely to corrupt data.
     \item Page 0 hosts erase count header.
     \item The next page, page 1 in this example, the volume ID header.
     \item All remaining pages are used for payload.
@@ -406,7 +415,7 @@
   \item Solutions:
     \begin{enumerate}
     \item Keep track of invalidated LEBs in UBI (using a log?).
-    \item Force UBI users to atomic updates when necessary.
+    \item Force UBI users to use atomic updates when necessary.
     \end{enumerate}
   \item We chose solution 2:
     \begin{itemize}
@@ -428,10 +437,13 @@
   \item Also make sure you have strong ECC.
   \item When using ubinize, pass the type of the pairing scheme to it.
     \begin{itemize}
-        \item For SLC NAND, PEB and minimum input/output unit size are enough.
-        \item To produce MLC NAND images we had to teach ubinize about pairing schemes.
-        \item So far only two schemes are supported.
-        \item Schemes have to be kept in sync with the kernel. Better solution?
+    \item For SLC NAND, PEB and minimum input/output unit size are
+	  enough.
+    \item To produce MLC NAND images we had to teach ubinize about
+	  pairing schemes.
+    \item So far only two schemes are supported.
+    \item Schemes have to be kept in sync with the kernel.\\
+	  Better solutions?
     \end{itemize}
   \item Run ubihealthd.
   \end{itemize}
