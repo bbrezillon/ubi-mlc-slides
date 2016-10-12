@@ -32,14 +32,14 @@
 
 \begin{frame}{SLC NANDs: Boring, our happy place}
   \begin{figure}
-  \includegraphics[scale=0.05]{Macaca_fuscata_juvenile_yawning.jpg}
+  \includegraphics[scale=0.15]{Macaca_fuscata_juvenile_yawning.jpg}
    \end{figure}
 % or maybe this one? https://en.wikipedia.org/wiki/Wikipedia:Featured_picture_candidates/Japanese_macaque_juvenile_yawning
 \end{frame}
 
 \begin{frame}{MLC NANDs: A nightmare}
   \begin{figure}
-  \includegraphics[scale=0.1]{hand-984170_1920.jpg}
+  \includegraphics[scale=0.115]{hand-984170_1920.jpg}
    \end{figure}
 % https://pixabay.com/de/hand-silhouette-form-horror-984170/
 \end{frame}
@@ -49,7 +49,7 @@
   \item Reduced lifetime: limited number of P/E cycles (5000-10000).
   \item Pages within an erase block have to be programmed in ascending
 	order.
-  \item Data rentention issues: pretty much the same problem we see
+  \item Data retention issues: pretty much the same problem we see
 	on SLC NANDs, but a different order of magnitude.
   \item Paired pages: why the hell did they decide to assign the same
 	cell to different NAND pages?
@@ -83,8 +83,8 @@
   \item Two known sources:
     \begin{itemize}
     \item Read/write disturbance: reading/programming a cell can
-	  change neighbour cells state
-    \item Inherent charge loss: NAND cells tend to loose their
+	  change neighbor cells state
+    \item Inherent charge loss: NAND cells tend to lose their
 	  charge over-time. This is emphasized when NAND cells are
 	  worn out.
     \end{itemize}
@@ -296,7 +296,7 @@
   \begin{itemize}
   \item By default every LEB is written in 'SLC mode'.
   \item Obviously we'd waste half the storage capacity.
-  \item As soon we run out of free erase block, UBI will consolidate
+  \item As soon we run out of free erase blocks, UBI will consolidate
 	two fully written SLC LEBs into one MLC PEB and we gain one
 	more LEB which can be written again in 'SLC mode'.
   \item That way we can utilize all pages.
@@ -506,13 +506,13 @@
 \frametitle{V2 plans: Fix LEB/PEB reservation}
   \begin{itemize}
   \item Limit consolidation scope to volumes.
-  \item Reserve PEBs ahaead of time.
+  \item Reserve PEBs ahead of time.
   \item Keep a certain amount of PEBs in SLC mode (5\%).
   \item Rework selection of candidates for consolidation: LRU (Least
 	Recently Updated)
     \begin{itemize}
     \item Get rid of the 'max number of open LEBs' limitation.
-    \item Get rid of the 'enterily fill LEBs' limitation.
+    \item Get rid of the 'entirely fill LEBs' limitation.
     \item More efficient than the 'consolidate full LEBs' approach.
     \end{itemize}
   \end{itemize}
